@@ -1,7 +1,10 @@
 # Big-Chess-Project
-make chess, and then make algorithm to play against. Then make AI bot to play against. Then make orginal pvp, playable online. All from scratch.
+Chess engine with options to play chess against an Ai bot, yourself, a friend online and offline.
 
 Learning Goals for this Project:
-- Implement proper OOP
+- Practice implementing OOP
 - Practice algorithmic programming
+- Begin learning how to put things online
+- Begin learning neural networks
+  
   
