@@ -19,10 +19,10 @@ class MenusAndGame:
         self.competitive = False
         self.input_activity = False
 
-
     def passive(self):
         while self.running:
             if self.page == "results":
+                self.screen.fill("white")
                 self.render_game_result(self.result)
                 for x in pygame.event.get():
                     if str(x) == "<Event(256-Quit {})>":
@@ -82,7 +82,6 @@ class MenusAndGame:
 
     def render_game_result(self, result):
 
-        self.screen.fill("white")
         result_info = [(25, result, "black", (240, 200))]
         self.render_texts(result_info)
 
@@ -97,7 +96,7 @@ class MenusAndGame:
     def initial_display(self):
         texts = [(50, "Tem's Chess", "white", (250, 50)),
                  (20, "click on respective squares to play", "dark grey", (250, 100)),
-                 (20, "PVP offline", "white", (65, 200))]
+                 (20, "offline", "white", (85, 200))]
         squares = [("dark grey", (50, 150, 150, 150))]
 
         self.render_regions(squares)
@@ -142,19 +141,16 @@ class MenusAndGame:
         try:
             self.pygame.display.set_mode((self.chess_s_s, self.chess_s_s))
             engine = Game(self.screen, self.pygame, self.chess_s_s, self.chess_color)
-            game_outcome = engine.base_game()
+            if self.competitive:
+                game_outcome = engine.base_game(ai = True)
+            else:
+                game_outcome = engine.base_game()
 
             self.result = game_outcome
             if self.result == "END":
                 pass
             else:
-
-
                 self.page = "results"
-
-
-
-
 
         except ValueError:
             self.pygame.display.set_mode((500,500))
@@ -230,7 +226,7 @@ class MenusAndGame:
 
         self.screen.fill("grey")
 
-        texts1 = [(50, "PVP offline Chess", "white", (250, 60)), (50, "START", "dark green", (250, 450)),(25, "Competitive/Timed:", "black", (140, 350)),(25, "Board Size (pixels):", "black", (145, 250)), (25, "Board Color:", "black", (100, 150))]
+        texts1 = [(50, "PVP offline Chess", "white", (250, 60)), (50, "START", "dark green", (250, 450)),(25, "Versus AI?:", "black", (140, 350)),(25, "Board Size (pixels):", "black", (145, 250)), (25, "Board Color:", "black", (100, 150))]
         texts2 = [(30, "Yes", "green", (335, 350)), (30, "No", "dark red", (425, 350))]
 
         self.render_regions([x[1] for x in regions if x[0] == competitive]+regions_2)

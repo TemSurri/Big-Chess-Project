@@ -146,17 +146,19 @@ class BoardBackgroundPieces:
         self.pygame.display.flip()
 
 class PieceFoundational:
-    def __init__(self, start_quadrant, name, quadrants, side):
+    def __init__(self, start_quadrant, name, quadrants, side, *times_moved):
         self.all_cords = quadrants
         self.name = name
         self.side = side
+        self.color = ""
 
         self.starting_quadrant = start_quadrant
         self.current_quadrant = start_quadrant
-        self.x = self.current_quadrant[0]
-        self.y = self.current_quadrant[1]
         self.image = ""
-        self.times_moved = 0
+        if times_moved:
+            self.times_moved = times_moved[0]
+        else:
+            self.times_moved = 0
 
         self.pawn_direction = ""
 
@@ -170,38 +172,51 @@ class PieceFoundational:
         if self.times_moved != 0:
             return []
 
-        king_spot = [x[0] for x in occupancy if x[2] == "king" and x[1] == self.side][0]
-        closer_rook = [x[0] for x in occupancy if x[2] == "rook" and x[1] == self.side and abs(x[0][0] - king_spot[0]) == 3]
-        further_rook = [x[0] for x in occupancy if x[2] == "rook" and x[1] == self.side and abs(x[0][0] - king_spot[0]) == 4]
+        king_spot = [x[0] for x in occupancy if x[2] == "king" and x[1] == self.side and x[4]==0]
+        if len(king_spot) == 0:
+            return []
+        else:
+            king_spot = king_spot[0]
+        closer_rook_ = [[x[0], x[4]] for x in occupancy if x[2] == "rook" and x[1] == self.side and abs(x[0][0] - king_spot[0]) == 3]
+        further_rook_ = [[x[0], x[4]] for x in occupancy if x[2] == "rook" and x[1] == self.side and abs(x[0][0] - king_spot[0]) == 4]
+
 
         king_moves = []
         further_rook_moves = []
         closer_rook_moves = []
 
-        if len(closer_rook) == 1:
-            closer_rook = closer_rook[0]
+        if len(closer_rook_) == 1:
+
+            closer_rook = closer_rook_[0][0]
+            c_moved = closer_rook_[0][1]
 
             larger_num = closer_rook[0] if closer_rook[0] > king_spot[0] else king_spot[0]
             smaller_num = closer_rook[0] if king_spot[0] > closer_rook[0] else king_spot[0]
 
             blockage = [x for x in occupancy if larger_num > x[0][0] > smaller_num and x[0][1] == king_spot[1]]
 
-            if not blockage:
+            if not blockage and c_moved == 0:
 
                 king_moves.append(closer_rook)
                 closer_rook_moves.append(king_spot)
 
-        if len(further_rook) == 1:
-            further_rook = further_rook[0]
+        else:
+            closer_rook = False
 
+        if len(further_rook_) == 1:
+            further_rook = further_rook_[0][0]
+            f_moved = further_rook_[0][1]
             larger_num = further_rook[0] if further_rook[0] > king_spot[0] else king_spot[0]
             smaller_num = further_rook[0] if king_spot[0] > further_rook[0] else king_spot[0]
             blockage = [x for x in occupancy if larger_num > x[0][0] > smaller_num and x[0][1] == king_spot[1]]
 
-            if not blockage:
+            if not blockage and f_moved == 0:
 
                 king_moves.append(further_rook)
                 further_rook_moves.append(king_spot)
+
+        else:
+            further_rook = False
 
         king_moves = [x for x in self.all_cords if x[2] in king_moves]
         further_rook_moves = [x for x in self.all_cords if x[2] in further_rook_moves]
@@ -229,10 +244,9 @@ class PieceFoundational:
 
         if cord in spots:
             if no_castle:
-                self.times_moved = + 1
+                self.times_moved =+ 1
                 self.current_quadrant = cord
-                self.x = cord[0]
-                self.y = cord[1]
+
                 if cord in enemies:
                     return [cord, "remove enemy at this location this turn"]
                 else:
@@ -336,8 +350,7 @@ class PieceFoundational:
 
             self.times_moved =+ 1
             self.current_quadrant = cord
-            self.x = cord[0]
-            self.y = cord[1]
+
             if cord in enemies:
                 return [cord, "remove enemy at this location this turn"]
             else:
@@ -345,6 +358,7 @@ class PieceFoundational:
                 return [0, "moved"]
 
         else:
+            print(occupancy)
             print("spot not possible")
             return [0, "error"]
 
@@ -408,8 +422,8 @@ class PieceFoundational:
         return possible_final
 
     def one_step_pos_foundational(self, direction, occupancy, **pawn):
-        x = self.x
-        y = self.y
+        x = self.current_quadrant[0]
+        y = self.current_quadrant[1]
 
         cord = (x, y)
 
@@ -438,7 +452,7 @@ class PieceFoundational:
 
             edibles = [x for x in self.all_cords if x[2] in edibles]
 
-            if self.starting_quadrant == self.current_quadrant:
+            if self.times_moved == 0:
 
                 if direction == "up":
                     extra_cord = (cord[0],cord[1]-1)
@@ -470,8 +484,8 @@ class PieceFoundational:
         return possible_spots
 
     def component_separation_foundational(self):
-        x = self.x
-        y = self.y
+        x = self.current_quadrant[0]
+        y = self.current_quadrant[1]
 
         hor_available = [cord[2][0] for cord in self.all_cords if cord[2][0] > x and cord[2][1] == y or cord[2][0] < x and cord[2][1] == y]
         ver_available = [cord[2][1] for cord in self.all_cords if cord[2][1] > y and cord[2][0] == x or cord[2][1] < y and cord[2][0] == x]
@@ -484,8 +498,8 @@ class PieceFoundational:
         return right_x, left_x, up_y, down_y
 
     def diagonal_foundational(self, occupancy):
-        x = self.x
-        y = self.y
+        x = self.current_quadrant[0]
+        y = self.current_quadrant[1]
         set_available= self.component_separation_foundational()
 
         x_right = set_available[0]
@@ -544,8 +558,8 @@ class PieceFoundational:
         return possible_spots
 
     def straight_foundational(self, occupancy):
-        x = self.x
-        y = self.y
+        x = self.current_quadrant[0]
+        y = self.current_quadrant[1]
 
         set_available = self.component_separation_foundational()
 
@@ -574,8 +588,8 @@ class PieceFoundational:
         return possible_spots
 
     def horse_foundational(self, occupancy):
-        x = self.x
-        y = self.y
+        x = self.current_quadrant[0]
+        y = self.current_quadrant[1]
 
         right = [(x+2,y-1), (x+2, y+1)]
         right = [x for x in self.all_cords if x[2] in right]
@@ -691,18 +705,25 @@ class ConventionalChessSetUp:
         self.horses = [("Knight",2, 1, "upper"), ("Knight", 7, 1, "upper"), ("Knight",2, 8, "lower"), ("Knight",7, 8, "lower")]
         self.bishops = [("Bishop", 3, 1, "upper"), ("Bishop", 6, 1, "upper"), ("Bishop", 3, 8, "lower"), ("Bishop", 6, 8, "lower")]
         self.kings_queens = [("King",4, 1, "upper"), ("Queen",5, 1, "upper"),("King",5, 8, "lower"), ("Queen", 4, 8,"lower")]
-        self.kings_queens_v2 = [("queen",4, 8, "lower"), ("king", 5, 8, "lower"),("queen", 5, 1, "upper"), ("king",4, 1, "upper")]
+        self.kings_queens_v2 = [("King",4, 8, "lower"), ("Queen", 5, 8, "lower"),("King", 5, 1, "upper"), ("Queen",4, 1, "upper")]
 
-        self.setup = self.pawns+self.rooks+self.horses+self.bishops+self.kings_queens
+        self.setup = self.pawns+self.rooks+self.horses+self.bishops+self.kings_queens_v2
         self.pieces = [eval(x[0])((x[1],x[2]), x[0].lower(), self.quadrant_classifications, x[3]) for x in self.setup]
-        self.quadrant_starting_occupancy = [[x.current_quadrant, x.side, x.name] for x in self.pieces]
-        self.quadrant_current_occupancy = self.quadrant_starting_occupancy
 
         sides = ["upper", "lower"]
 
         self.black = [random.choice(sides), "black"]
         sides.remove(self.black[0])
         self.white = [random.choice(sides), "white"]
+
+        for x in self.pieces:
+            if x.side == self.black[0]:
+                x.color = self.black[1]
+            else:
+                x.color = self.white[1]
+
+        self.quadrant_starting_occupancy = [[x.current_quadrant, x.side, x.name, x.color, x.times_moved] for x in self.pieces]
+        self.quadrant_current_occupancy = self.quadrant_starting_occupancy
 
         positions = [[piece.name, piece.side, piece.starting_quadrant] for piece in self.pieces]
         positions_info = []
@@ -730,12 +751,22 @@ class ConventionalChessSetUp:
 
     def update_occupancy(self):
         self.board_info.create(self.board_color)
-        self.quadrant_current_occupancy = [[x.current_quadrant, x.side, x.name] for x in self.pieces]
+        self.quadrant_current_occupancy = [[x.current_quadrant, x.side, x.name, x.color, x.times_moved] for x in self.pieces]
         self.board_info.update_pieces(self.pieces)
-
-    def create_virtual_pieces_stats(self):
-        v_pieces = [eval(x.name.capitalize())(x.current_quadrant, x.name.lower(), self.quadrant_classifications, x.side) for x in self.pieces]
-
+    def create_occupancy(self, pieces):
+        self.board_info = self.board_info
+        occupancy = [[x.current_quadrant, x.side, x.name, x.color, x.times_moved] for x in pieces]
+        return occupancy
+    def create_virtual_pieces_stats(self, *pieces):
+        if pieces:
+            v_pieces = [eval(x.name.capitalize())(x.current_quadrant, x.name.lower(), self.quadrant_classifications, x.side, x.times_moved) for x in pieces[0]]
+        else:
+            v_pieces = [eval(x.name.capitalize())(x.current_quadrant, x.name.lower(), self.quadrant_classifications, x.side, x.times_moved) for x in self.pieces]
+        for x in v_pieces:
+            if x.side == self.black[0]:
+                x.color = self.black[1]
+            else:
+                x.color = self.white[1]
 
         return v_pieces
 
